@@ -1,0 +1,375 @@
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #a8e6cf 0%, #dcedc1 50%, #b8e6b8 100%);
+    min-height: 100vh;
+    overflow-x: hidden;
+    color: #2c5530;
+}
+
+/* Container */
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Header */
+.header {
+    text-align: center;
+    margin-bottom: 3rem;
+    animation: fadeInDown 1s ease-out;
+}
+
+.title {
+    font-size: 2.5rem;
+    font-weight: 300;
+    margin-bottom: 0.5rem;
+    color: #2c5530;
+    letter-spacing: 1px;
+}
+
+.subtitle {
+    font-size: 1.1rem;
+    color: #4a7c59;
+    font-weight: 300;
+    opacity: 0.8;
+}
+
+/* Main breathing area */
+.breathing-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 3rem;
+}
+
+/* Circle container and animation */
+.circle-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+.breathing-circle {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7dd3fc 0%, #a7f3d0 50%, #86efac 100%);
+    box-shadow: 
+        0 10px 30px rgba(125, 211, 252, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    transition: all 4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.circle-glow {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(125, 211, 252, 0.4) 0%, transparent 70%);
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 4s ease-in-out;
+}
+
+/* Circle states */
+.breathing-circle.inhale {
+    transform: scale(1.4);
+    box-shadow: 
+        0 15px 40px rgba(125, 211, 252, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.breathing-circle.inhale .circle-glow {
+    opacity: 1;
+}
+
+.breathing-circle.exhale {
+    transform: scale(0.8);
+    box-shadow: 
+        0 5px 15px rgba(125, 211, 252, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Instruction container */
+.instruction-container {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    min-height: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.instruction-text {
+    font-size: 1.8rem;
+    font-weight: 300;
+    color: #2c5530;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+    margin-bottom: 0.5rem;
+}
+
+.instruction-text.visible {
+    opacity: 1;
+}
+
+.phase-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #7dd3fc;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.phase-indicator.active {
+    opacity: 1;
+    transform: scale(1.2);
+    box-shadow: 0 0 10px rgba(125, 211, 252, 0.6);
+}
+
+/* Progress bar */
+.progress-container {
+    width: 300px;
+    margin-bottom: 2rem;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #7dd3fc, #86efac);
+    border-radius: 2px;
+    width: 0%;
+    transition: width 4s linear;
+    box-shadow: 0 0 10px rgba(125, 211, 252, 0.4);
+}
+
+/* Controls */
+.controls {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    animation: fadeInUp 1s ease-out 0.5s both;
+}
+
+.control-btn {
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 50px;
+    padding: 15px 30px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #2c5530;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 
+        0 4px 15px rgba(0, 0, 0, 0.1),
+        0 0 0 1px rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+.control-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+        0 6px 20px rgba(0, 0, 0, 0.15),
+        0 0 0 1px rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.control-btn:active {
+    transform: translateY(0);
+}
+
+.start-btn {
+    min-width: 120px;
+}
+
+.start-btn.active {
+    background: linear-gradient(135deg, #f87171, #fb7185);
+    color: white;
+}
+
+.start-btn.active:hover {
+    background: linear-gradient(135deg, #ef4444, #f43f5e);
+}
+
+.sound-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sound-btn.muted {
+    opacity: 0.5;
+}
+
+.sound-icon {
+    font-size: 1.5rem;
+}
+
+/* Stats */
+.stats {
+    text-align: center;
+}
+
+.cycle-counter {
+    background: rgba(255, 255, 255, 0.8);
+    padding: 10px 20px;
+    border-radius: 25px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.counter-label {
+    font-size: 0.9rem;
+    color: #4a7c59;
+    margin-right: 0.5rem;
+}
+
+.counter-value {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #2c5530;
+}
+
+/* Animations */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.05);
+        opacity: 0.8;
+    }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+    
+    .title {
+        font-size: 2rem;
+    }
+    
+    .subtitle {
+        font-size: 1rem;
+    }
+    
+    .breathing-circle {
+        width: 150px;
+        height: 150px;
+    }
+    
+    .instruction-text {
+        font-size: 1.5rem;
+    }
+    
+    .controls {
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .progress-container {
+        width: 250px;
+    }
+}
+
+@media (max-width: 480px) {
+    .breathing-circle {
+        width: 120px;
+        height: 120px;
+    }
+    
+    .instruction-text {
+        font-size: 1.3rem;
+    }
+    
+    .controls {
+        gap: 1rem;
+    }
+    
+    .progress-container {
+        width: 200px;
+    }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .breathing-circle,
+    .circle-glow,
+    .instruction-text,
+    .progress-fill {
+        transition: none;
+    }
+    
+    .breathing-area,
+    .controls {
+        animation: none;
+    }
+}
+
+/* Focus styles for accessibility */
+.control-btn:focus {
+    outline: 2px solid #7dd3fc;
+    outline-offset: 2px;
+}
