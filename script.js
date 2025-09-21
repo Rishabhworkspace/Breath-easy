@@ -1,6 +1,6 @@
-// Box Breathing Companion - Main JavaScript
+// Box Breathing Companion - Enhanced Audio Version
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Box Breathing Companion loaded!');
+    console.log('Box Breathing Companion with Enhanced Audio loaded!');
     
     // DOM Elements
     const breathingCircle = document.getElementById('breathingCircle');
@@ -11,11 +11,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const soundBtn = document.getElementById('soundBtn');
     const soundIcon = document.getElementById('soundIcon');
     const cycleCount = document.getElementById('cycleCount');
-    
-    // Audio elements
-    const inhaleSound = document.getElementById('inhaleSound');
-    const holdSound = document.getElementById('holdSound');
-    const exhaleSound = document.getElementById('exhaleSound');
+    const audioControls = document.getElementById('audioControls');
+    const backgroundVolumeSlider = document.getElementById('backgroundVolume');
+    const cuesVolumeSlider = document.getElementById('cuesVolume');
     
     // App State
     let isBreathing = false;
@@ -24,6 +22,13 @@ document.addEventListener('DOMContentLoaded', function() {
     let breathingInterval = null;
     let progressInterval = null;
     let soundEnabled = true;
+    
+    // Audio Context and Nodes
+    let audioContext = null;
+    let backgroundMusic = null;
+    let backgroundGain = null;
+    let cuesGain = null;
+    let isAudioInitialized = false;
     
     // Breathing phases configuration
     const phases = [
@@ -37,13 +42,16 @@ document.addEventListener('DOMContentLoaded', function() {
     function init() {
         updateUI();
         setupEventListeners();
-        createAudioContext();
+        setupAudioVolumeControls();
     }
     
     // Setup event listeners
     function setupEventListeners() {
         startBtn.addEventListener('click', toggleBreathing);
         soundBtn.addEventListener('click', toggleSound);
+        
+        // Double-click sound button to show volume controls
+        soundBtn.addEventListener('dblclick', toggleAudioControls);
         
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
@@ -53,45 +61,269 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (e.code === 'KeyS') {
                 e.preventDefault();
                 toggleSound();
+            } else if (e.code === 'KeyV') {
+                e.preventDefault();
+                toggleAudioControls();
+            }
+        });
+        
+        // Handle user interaction for audio context
+        document.addEventListener('click', initializeAudioContext, { once: true });
+        document.addEventListener('touchstart', initializeAudioContext, { once: true });
+    }
+    
+    // Setup audio volume controls
+    function setupAudioVolumeControls() {
+        backgroundVolumeSlider.addEventListener('input', (e) => {
+            if (backgroundGain) {
+                backgroundGain.gain.setValueAtTime(e.target.value / 100 * 0.3, audioContext.currentTime);
+            }
+        });
+        
+        cuesVolumeSlider.addEventListener('input', (e) => {
+            if (cuesGain) {
+                cuesGain.gain.setValueAtTime(e.target.value / 100 * 0.7, audioContext.currentTime);
             }
         });
     }
     
-    // Create audio context for better browser compatibility
-    function createAudioContext() {
-        // Create simple audio tones since we can't load external audio files
-        // This is a fallback - in a real app you'd load actual audio files
+    // Initialize audio context and create background music
+    async function initializeAudioContext() {
+        if (isAudioInitialized) return;
+        
         try {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
             
-            // Create simple tones for breathing cues
-            window.playTone = function(frequency, duration, type = 'sine') {
-                if (!soundEnabled) return;
-                
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-                oscillator.type = type;
-                
-                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-                gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.1);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
-                
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + duration);
-            };
+            // Create gain nodes for volume control
+            backgroundGain = audioContext.createGain();
+            cuesGain = audioContext.createGain();
+            
+            backgroundGain.connect(audioContext.destination);
+            cuesGain.connect(audioContext.destination);
+            
+            // Set initial volumes
+            backgroundGain.gain.setValueAtTime(0.3 * (backgroundVolumeSlider.value / 100), audioContext.currentTime);
+            cuesGain.gain.setValueAtTime(0.7 * (cuesVolumeSlider.value / 100), audioContext.currentTime);
+            
+            // Create background music
+            createBackgroundMusic();
+            
+            isAudioInitialized = true;
+            console.log('Audio context initialized successfully');
+            
         } catch (e) {
-            console.log('Audio context not available');
-            window.playTone = () => {}; // Fallback function
+            console.log('Audio context initialization failed:', e);
+            // Fallback to simple tone generation
+            window.playTone = () => {};
         }
     }
     
+    // Create continuous background music
+    function createBackgroundMusic() {
+        if (!audioContext) return;
+        
+        // Create a complex ambient background using multiple oscillators
+        const createAmbientLayer = (frequency, type, gain) => {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            const filter = audioContext.createBiquadFilter();
+            
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            oscillator.type = type;
+            
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(800, audioContext.currentTime);
+            filter.Q.setValueAtTime(1, audioContext.currentTime);
+            
+            gainNode.gain.setValueAtTime(gain, audioContext.currentTime);
+            
+            oscillator.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(backgroundGain);
+            
+            return { oscillator, gainNode, filter };
+        };
+        
+        // Create multiple ambient layers for rich background
+        const layers = [
+            createAmbientLayer(55, 'sine', 0.1),     // Deep bass drone
+            createAmbientLayer(110, 'triangle', 0.08), // Low harmonic
+            createAmbientLayer(220, 'sine', 0.06),    // Mid-range pad
+            createAmbientLayer(330, 'triangle', 0.04), // Higher harmonic
+        ];
+        
+        // Add subtle modulation to create movement
+        layers.forEach((layer, index) => {
+            const lfo = audioContext.createOscillator();
+            const lfoGain = audioContext.createGain();
+            
+            lfo.frequency.setValueAtTime(0.1 + index * 0.05, audioContext.currentTime);
+            lfo.type = 'sine';
+            lfoGain.gain.setValueAtTime(0.02, audioContext.currentTime);
+            
+            lfo.connect(lfoGain);
+            lfoGain.connect(layer.gainNode.gain);
+            
+            lfo.start();
+            layer.oscillator.start();
+        });
+        
+        backgroundMusic = layers;
+    }
+    
+    // Start background music
+    function startBackgroundMusic() {
+        if (!soundEnabled || !backgroundGain) return;
+        
+        // Fade in background music
+        backgroundGain.gain.cancelScheduledValues(audioContext.currentTime);
+        backgroundGain.gain.setValueAtTime(0, audioContext.currentTime);
+        backgroundGain.gain.linearRampToValueAtTime(
+            0.3 * (backgroundVolumeSlider.value / 100), 
+            audioContext.currentTime + 2
+        );
+    }
+    
+    // Stop background music
+    function stopBackgroundMusic() {
+        if (!backgroundGain) return;
+        
+        // Fade out background music
+        backgroundGain.gain.cancelScheduledValues(audioContext.currentTime);
+        backgroundGain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 1);
+    }
+    
+    // Create soothing breathing cue sounds
+    function createBreathingCue(type, duration = 0.8) {
+        if (!soundEnabled || !audioContext || !cuesGain) return;
+        
+        const now = audioContext.currentTime;
+        
+        switch (type) {
+            case 'inhale':
+                // Gentle rising tone like soft wind
+                createWindSound(220, 330, duration, 'inhale');
+                break;
+                
+            case 'hold':
+                // Soft chime or bell
+                createChimeSound(440, duration);
+                break;
+                
+            case 'exhale':
+                // Gentle falling tone like gentle breeze
+                createWindSound(330, 220, duration, 'exhale');
+                break;
+        }
+    }
+    
+    // Create wind-like sound for inhale/exhale
+    function createWindSound(startFreq, endFreq, duration, type) {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        const filter = audioContext.createBiquadFilter();
+        const noiseGain = audioContext.createGain();
+        
+        // Main tone
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(startFreq, audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(endFreq, audioContext.currentTime + duration);
+        
+        // Filter for warmth
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1000, audioContext.currentTime);
+        filter.Q.setValueAtTime(0.5, audioContext.currentTime);
+        
+        // Envelope
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.1);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+        
+        // Add subtle noise for breath-like quality
+        const noiseBuffer = createNoiseBuffer(0.1);
+        const noiseSource = audioContext.createBufferSource();
+        noiseSource.buffer = noiseBuffer;
+        
+        noiseGain.gain.setValueAtTime(0, audioContext.currentTime);
+        noiseGain.gain.linearRampToValueAtTime(0.05, audioContext.currentTime + 0.1);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+        
+        // Connect nodes
+        oscillator.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(cuesGain);
+        
+        noiseSource.connect(noiseGain);
+        noiseGain.connect(cuesGain);
+        
+        // Start and stop
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + duration);
+        
+        noiseSource.start(audioContext.currentTime);
+        noiseSource.stop(audioContext.currentTime + duration);
+    }
+    
+    // Create chime sound for hold phases
+    function createChimeSound(frequency, duration) {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        const filter = audioContext.createBiquadFilter();
+        
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+        
+        // Add harmonic
+        const harmonic = audioContext.createOscillator();
+        const harmonicGain = audioContext.createGain();
+        harmonic.type = 'sine';
+        harmonic.frequency.setValueAtTime(frequency * 2, audioContext.currentTime);
+        harmonicGain.gain.setValueAtTime(0.3, audioContext.currentTime);
+        
+        // Filter for bell-like quality
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(2000, audioContext.currentTime);
+        filter.Q.setValueAtTime(1, audioContext.currentTime);
+        
+        // Bell-like envelope
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.4, audioContext.currentTime + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+        
+        // Connect nodes
+        oscillator.connect(filter);
+        harmonic.connect(harmonicGain);
+        harmonicGain.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(cuesGain);
+        
+        // Start and stop
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + duration);
+        harmonic.start(audioContext.currentTime);
+        harmonic.stop(audioContext.currentTime + duration);
+    }
+    
+    // Create noise buffer for breath-like sounds
+    function createNoiseBuffer(duration) {
+        const sampleRate = audioContext.sampleRate;
+        const bufferSize = sampleRate * duration;
+        const buffer = audioContext.createBuffer(1, bufferSize, sampleRate);
+        const data = buffer.getChannelData(0);
+        
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = (Math.random() * 2 - 1) * 0.1;
+        }
+        
+        return buffer;
+    }
+    
     // Toggle breathing session
-    function toggleBreathing() {
+    async function toggleBreathing() {
+        if (!isAudioInitialized) {
+            await initializeAudioContext();
+        }
+        
         if (isBreathing) {
             stopBreathing();
         } else {
@@ -105,7 +337,13 @@ document.addEventListener('DOMContentLoaded', function() {
         currentPhase = 0;
         
         updateStartButton();
+        startBackgroundMusic();
         startBreathingCycle();
+        
+        // Add visual indicator for playing audio
+        if (soundEnabled) {
+            soundBtn.classList.add('playing');
+        }
     }
     
     // Stop breathing session
@@ -123,12 +361,16 @@ document.addEventListener('DOMContentLoaded', function() {
             progressInterval = null;
         }
         
+        // Stop background music
+        stopBackgroundMusic();
+        
         // Reset UI
         resetCircle();
         resetProgress();
         updateStartButton();
         updateInstruction('Press Start to Begin');
         hidePhaseIndicator();
+        soundBtn.classList.remove('playing');
     }
     
     // Start breathing cycle
@@ -143,7 +385,7 @@ document.addEventListener('DOMContentLoaded', function() {
         showPhaseIndicator();
         startProgress(phase.duration);
         
-        // Play audio cue
+        // Play breathing cue sound
         playPhaseSound(currentPhase);
         
         // Set timer for next phase
@@ -170,16 +412,16 @@ document.addEventListener('DOMContentLoaded', function() {
         
         switch (phase) {
             case 0: // Inhale
-                window.playTone(220, 0.5, 'sine'); // A3 note
+                createBreathingCue('inhale', 1.0);
                 break;
             case 1: // Hold after inhale
-                window.playTone(330, 0.3, 'triangle'); // E4 note
+                createBreathingCue('hold', 0.5);
                 break;
             case 2: // Exhale
-                window.playTone(165, 0.5, 'sine'); // E3 note
+                createBreathingCue('exhale', 1.0);
                 break;
             case 3: // Hold after exhale
-                window.playTone(275, 0.3, 'triangle'); // C#4 note
+                createBreathingCue('hold', 0.5);
                 break;
         }
     }
@@ -253,6 +495,16 @@ document.addEventListener('DOMContentLoaded', function() {
     function toggleSound() {
         soundEnabled = !soundEnabled;
         updateSoundButton();
+        
+        if (isBreathing) {
+            if (soundEnabled) {
+                startBackgroundMusic();
+                soundBtn.classList.add('playing');
+            } else {
+                stopBackgroundMusic();
+                soundBtn.classList.remove('playing');
+            }
+        }
     }
     
     // Update sound button
@@ -266,6 +518,12 @@ document.addEventListener('DOMContentLoaded', function() {
             soundBtn.classList.add('muted');
             soundBtn.title = 'Turn Sound On';
         }
+    }
+    
+    // Toggle audio controls visibility
+    function toggleAudioControls() {
+        const isVisible = audioControls.style.display !== 'none';
+        audioControls.style.display = isVisible ? 'none' : 'block';
     }
     
     // Update cycle counter
@@ -305,7 +563,10 @@ document.addEventListener('DOMContentLoaded', function() {
     init();
     
     // Add some helpful console messages
-    console.log('🫁 Box Breathing Companion ready!');
-    console.log('💡 Tip: Press Space to start/stop, S to toggle sound');
-    console.log('🎯 Follow the 4-4-4-4 breathing pattern for best results');
+    console.log('🫁 Box Breathing Companion with Enhanced Audio ready!');
+    console.log('💡 Tips:');
+    console.log('  - Press Space to start/stop, S to toggle sound');
+    console.log('  - Double-click sound button or press V for volume controls');
+    console.log('  - Enjoy the continuous ambient background music');
+    console.log('🎯 Follow the 4-4-4-4 breathing pattern with soothing audio cues');
 });

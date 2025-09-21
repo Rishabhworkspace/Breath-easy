@@ -231,10 +231,34 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
 }
 
 .sound-btn.muted {
     opacity: 0.5;
+}
+
+.sound-btn.playing::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border-radius: 50%;
+    border: 2px solid #7dd3fc;
+    animation: pulse-ring 2s infinite;
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1.2);
+        opacity: 0;
+    }
 }
 
 .sound-icon {
@@ -264,6 +288,39 @@ body {
     font-size: 1.2rem;
     font-weight: 600;
     color: #2c5530;
+}
+
+/* Audio controls (hidden by default) */
+.audio-controls {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.volume-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.volume-control:last-child {
+    margin-bottom: 0;
+}
+
+.volume-control label {
+    font-size: 0.8rem;
+    color: #2c5530;
+    min-width: 100px;
+}
+
+.volume-control input[type="range"] {
+    width: 80px;
 }
 
 /* Animations */
@@ -332,6 +389,12 @@ body {
     .progress-container {
         width: 250px;
     }
+    
+    .audio-controls {
+        bottom: 10px;
+        right: 10px;
+        padding: 10px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -364,6 +427,10 @@ body {
     
     .breathing-area,
     .controls {
+        animation: none;
+    }
+    
+    .sound-btn.playing::after {
         animation: none;
     }
 }
